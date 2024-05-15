@@ -1,27 +1,20 @@
-package com.example.taskmanagement.models;
+package com.example.taskmanagement.models.dto;
 
-import jakarta.persistence.*;
+import com.example.taskmanagement.models.UserRole;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@Entity
 @Data
-@Table(name = "users_table")
-@NoArgsConstructor
-public class User {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class UserDTO {
     private Long userId;
     private String username;
     private String email;
     private String password;
-    @Enumerated(EnumType.STRING)
     private UserRole userRole;
     private LocalDateTime registrationDate;
 
-    public User(String username, String email, String password, UserRole userRole) {
+    public UserDTO(String username, String email, String password, UserRole userRole) {
         this.username = username;
         this.email = email;
         this.password = password;

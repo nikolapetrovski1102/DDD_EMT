@@ -10,7 +10,7 @@ import java.util.List;
 public interface TaskService {
     Task createTask(String title, String description, LocalDateTime dueDate, TaskStatus status, Long userId, TaskPriority priority);
     Task getTaskById(Long taskId);
-    Task getTasksByUserId(Long userId);
+    List<Task> getTasksByUserId(Long userId);
     List<Task> getAllTasks();
     void updateTask(Long taskId, String title, String description, LocalDateTime dueDate, TaskStatus status, TaskPriority priority);
     void deleteTask(Long taskId);

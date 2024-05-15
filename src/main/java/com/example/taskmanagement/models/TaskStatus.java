@@ -3,7 +3,8 @@ package com.example.taskmanagement.models;
 public enum TaskStatus {
     PENDING("Pending"),
     COMPLETED("Completed"),
-    OVERDUE("Overdue");
+    OVERDUE("Overdue"),
+    NOTSTARTED("Not Started");
 
     private final String displayName;
 

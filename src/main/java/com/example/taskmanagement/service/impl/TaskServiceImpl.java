@@ -1,17 +1,19 @@
 package com.example.taskmanagement.service.impl;
 
+import com.example.taskmanagement.config.EmailerObject;
+import com.example.taskmanagement.event.TaskEvent;
 import com.example.taskmanagement.models.Task;
 import com.example.taskmanagement.models.TaskStatus;
 import com.example.taskmanagement.models.User;
-import com.example.taskmanagement.models.exceptions.TaskNotFoundException;
+import com.example.taskmanagement.models.exceptions.UserNotFoundException;
 import com.example.taskmanagement.models.valueobjects.DueDate;
 import com.example.taskmanagement.models.valueobjects.TaskDescription;
 import com.example.taskmanagement.models.valueobjects.TaskPriority;
 import com.example.taskmanagement.repository.TaskRepository;
 import com.example.taskmanagement.repository.UserRepository;
 import com.example.taskmanagement.service.TaskService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,10 +22,12 @@ import java.util.List;
 public class TaskServiceImpl implements TaskService {
     private final TaskRepository taskRepository;
     private final UserRepository userRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
-    public TaskServiceImpl(TaskRepository taskRepository, UserRepository userRepository) {
+    public TaskServiceImpl(TaskRepository taskRepository, UserRepository userRepository, ApplicationEventPublisher applicationEventPublisher) {
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     @Override
@@ -36,6 +40,11 @@ public class TaskServiceImpl implements TaskService {
 
         Task task = new Task(title, status, user, priority, date, taskDescription);
 
+        if (task.getUser() != null) {
+            EmailerObject emailer = new EmailerObject("Task " + task.getTitle() + " is created and assinged to you", "Task " + task.getTitle() + " is created assinged to you task priority is " + task.getStatus(), task.getUser().getEmail());
+            applicationEventPublisher.publishEvent(new TaskEvent(emailer, "Task " + task.getTitle() + " is created and assinged to you", "Task " + task.getTitle() + " is created assinged to you task priority is " + task.getStatus(), task.getUser().getEmail()));
+        }
+
         return taskRepository.save(task);
     }
 
@@ -46,13 +55,16 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
-    public Task getTasksByUserId(Long userId) {
-        return taskRepository.findById(userId).orElseThrow(TaskNotFoundException::new);
+    public List<Task> getTasksByUserId(Long userId) {
+        User user = userRepository.findById(userId).orElseThrow(UserNotFoundException::new);
+
+        return taskRepository.findAllByUser(user);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<Task> getAllTasks() {
+        EmailerObject emailer = new EmailerObject("Getting all tasks", "All tasks fetched" + taskRepository.findAll().stream().toList(), "nikpetrovski007@gmail.com");
+        applicationEventPublisher.publishEvent(new TaskEvent(emailer, "Getting all tasks", "All tasks fetched <br/>" + taskRepository.findAll().stream().toList(), "nikpetrovski007@gmail.com"));
         return taskRepository.findAll();
     }
 
@@ -75,6 +87,13 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public void deleteTask(Long taskId) {
+        Task task = getTaskById(taskId);
+
+        if (task.getUser() != null) {
+            EmailerObject emailer = new EmailerObject("Task " + task.getTitle() + " was deleted", "Task " + task.getTitle() + " was deleted", task.getUser().getEmail());
+            applicationEventPublisher.publishEvent(new TaskEvent(emailer, "Task " + task.getTitle() + " was deleted", "Task " + task.getTitle() + " was deleted", task.getUser().getEmail()));
+        }
+
         taskRepository.deleteById(taskId);
     }
 
@@ -84,6 +103,11 @@ public class TaskServiceImpl implements TaskService {
                 .orElseThrow(() -> new IllegalArgumentException("Task not found with ID: " + taskId));
 
         task.setStatus(status);
+
+        if (task.getUser() != null) {
+            EmailerObject emailer = new EmailerObject("Task " + task.getTitle() + " changed status", "Task " + task.getTitle() + " changed status to " + task.getStatus(), task.getUser().getEmail());
+            applicationEventPublisher.publishEvent(new TaskEvent(emailer, "Task " + task.getTitle() + " changed status", "Task " + task.getTitle() + " changed status to " + task.getStatus(), task.getUser().getEmail()));
+        }
 
         taskRepository.save(task);
     }
@@ -97,6 +121,11 @@ public class TaskServiceImpl implements TaskService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
 
         task.setUser(user);
+
+        if (task.getUser() != null) {
+            EmailerObject emailer = new EmailerObject("Task " + task.getTitle() + " is assinged to you", "Task " + task.getTitle() + " assinged to you " + task.getTitle() + " task priority is " + task.getStatus(), task.getUser().getEmail());
+            applicationEventPublisher.publishEvent(new TaskEvent(emailer, "Task " + task.getTitle() + " is assinged to you", "Task " + task.getTitle() + " assinged to you " + task.getTitle() + " task priority is " + task.getStatus(), task.getUser().getEmail()));
+        }
 
         taskRepository.save(task);
     }

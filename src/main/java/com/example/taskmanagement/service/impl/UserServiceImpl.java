@@ -1,12 +1,14 @@
 package com.example.taskmanagement.service.impl;
 
 import com.example.taskmanagement.models.User;
+import com.example.taskmanagement.models.UserRole;
 import com.example.taskmanagement.models.exceptions.UserNotFoundException;
 import com.example.taskmanagement.repository.UserRepository;
 import com.example.taskmanagement.service.UserService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -19,9 +21,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User register(String username, String email, String password) {
-        User newUser = new User(username, email, password);
-        return userRepository.save(newUser);
+    public void register(User user) {
+        User newUser = new User(user.getUsername(), user.getEmail(), user.getPassword(), UserRole.USER_ROLE);
+        userRepository.save(newUser);
     }
 
     @Override
@@ -62,8 +64,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public boolean authenticateUser(String username, String password) {
-        User user = userRepository.findByUsername(username);
+    public boolean authenticateUser(String usernameOrEmail, String password) {
+        User user = userRepository.findByUsername(usernameOrEmail);
+
+        if (Objects.isNull(user)){
+            user = userRepository.findByEmail(usernameOrEmail);
+        }
+
         return user != null && user.getPassword().equals(password);
     }
 }
